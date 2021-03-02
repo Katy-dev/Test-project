@@ -1,71 +1,86 @@
 import "./App.css";
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 
 import "../../tailwind.css"
 import ClientsList from "../ClientsList"
 import AddFormClients from "../AddFormClients"
 import {
-  useQuery,
-  useQueryClient,
   QueryClient,
   QueryClientProvider,
 } from "react-query";
-import { ReactQueryDevtools } from "react-query/devtools";
 import EditFormClients from "../EditFormClients";
+import useClientsList from "../ClientsList/queries";
+import qgl from "graphql-tag"
 
 
-const queryClient = new QueryClient();
+const client = new QueryClient();
 
 function App() {
 
   const clientsData = [
-    { id: "1", firstName: 'Tania', lastName: 'aaaa', phone: 2324242424, avatarUrl: "http://ggfgyuegfyefg" },
-    { id: "2", firstName: 'Max', lastName: 'qqqq', phone: 2324242424, avatarUrl: "http://ggfgyuegfyefg" },
-    { id: "3", firstName: 'Max2', lastName: 'ssss', phone: 2324242424, avatarUrl: "http://ggfgyuegfyefg" },
-    { id: "4", firstName: 'Max3', lastName: 'sseee', phone: 2324242424, avatarUrl: "http://ggfgyuegfyefg" },
+    {
+      id: "1",
+      firstName: 'Kate',
+      lastName: 'Smith',
+      phone: 380673600000,
+      avatarUrl: "http://ggfgyuegfyefg"
+    },
+    {
+      id: "2",
+      firstName: 'Max',
+      lastName: 'Hock',
+      phone: 380673600000,
+      avatarUrl: "http://ggfgyuegfyefg"
+    },
   ]
+
+
   const [clients, setClients] = useState(clientsData);
   const [editing, setEditing] = useState(false)
-  const initialFormState = { id: null, firstName: "", lastName: "", phone: "", avatarUrl: ""  };
+  const initialFormState = {id: null, firstName: "", lastName: "", phone: "", avatarUrl: ""};
   const [currentClient, setCurrentClient] = useState(initialFormState);
 
   const addClient = client => {
     client.id = clients.length + 1
-    setClients([ ...clients, client ])
+    setClients([...clients, client])
   }
 
   const updateClient = (id, updatedClient) => {
     setEditing(false);
     setClients(clients.map(client => (client.id === id ? updatedClient : client)));
-    console.log(updatedClient, clients)
   }
 
   const editRow = client => {
     setEditing(true)
-    setCurrentClient({ id: client.id, firstName: client.firstName, lastName: client.lastName, phone: client.phone, avatarUrl:  client.avatarUrl });
+    setCurrentClient({
+      id: client.id,
+      firstName: client.firstName,
+      lastName: client.lastName,
+      phone: client.phone,
+      avatarUrl: client.avatarUrl
+    });
   }
 
 
   return (
-      <QueryClientProvider client={queryClient}>
-        <div className="container">
-          <h1>Client's list</h1>
-          <div className="wrapper__list">
+      <QueryClientProvider client={client}>
+        <div className="md:container md:mx-auto relative">
+          <h1 className="text-4xl text-center p-10">Customer's list</h1>
+          <div className="bg-gray-800 p-5 border-0 rounded-lg">
             <ClientsList
                 editRow={editRow}
                 clients={clients}
             />
-            { editing ? (
+            {editing ? (
                 <div>
-                <h2>Edit Client</h2>
-                <EditFormClients
-                   editing={editing}
-                   setEditing={setEditing}
-                   currentClient={currentClient}
-                   updateClient={updateClient}
-                />
+                  <EditFormClients
+                      editing={editing}
+                      setEditing={setEditing}
+                      currentClient={currentClient}
+                      updateClient={updateClient}
+                  />
                 </div>
-            ): (
+            ) : (
                 <div>
                   <AddFormClients
                       addClient={addClient}

@@ -1,27 +1,12 @@
-import { request, gql } from "graphql-request";
+import { request, GraphQLClient } from "graphql-request";
+import { useQuery} from "react-query";
 
-const useClientsList = () => {
 
-  const endpoint = "https://test-task.expane.pro/api/graphql"
-  return useClientsList("Client", async () => {
-    const {
-      Client: {data},
-    } = await request(
-        endpoint,
-        gql`
-        Client {
-          id
-          lastName 
-          firstName
-          phone
-          avatarUrl
-           }
-          }
-        }
-      `
-    );
-    return data;
-  });
+const useClientsList = (key, query, variables, config={}) => {
+
+  const endpoint = "https://test-task.expane.pro/api/graphql";
+  const fetchData =  async () => await request (endpoint,query, variables)
+  return useQuery( key,fetchData,config );
 }
 
 export default useClientsList;
