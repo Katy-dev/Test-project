@@ -1,5 +1,6 @@
 import {useForm} from "react-hook-form";
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef} from 'react'
+import {AddUpdateClient, ADD_CLIENT} from "../ClientsList/queries";
 
 
 const addSVG = <svg height="50px" viewBox="0 0 512 512" width="50px" xmlns="http://www.w3.org/2000/svg"
@@ -16,8 +17,9 @@ const addSVG = <svg height="50px" viewBox="0 0 512 512" width="50px" xmlns="http
 type Fn<T> = ({}) => Array<T>;
 
 interface Props {
-    addClient: Fn<Array<any>>;
-    setEditing: any;
+    addClient: Fn<Array<any>>,
+    setEditing: any,
+    refetch: any
 }
 
 const AddFormClients: React.FC<Props> = (props) => {
@@ -29,20 +31,30 @@ const AddFormClients: React.FC<Props> = (props) => {
         avatarUrl: string;
     }
 
-    const initialFormState = {id: null, firstName: "", lastName: "", phone: "", avatarUrl: ""};
-    const [client, setClient] = useState(initialFormState);
-
-    const {register, handleSubmit} = useForm<IFormInput>();
-
-    const onSubmit = (data: IFormInput) => {
-        props.addClient(data)
-        setClient(initialFormState)
-        setIsFormOpen(false);
-    }
-
+    const {register, handleSubmit, errors} = useForm<IFormInput>();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [avatarUrl, setAvatarUrl] = useState("");
+
+    const {mutate} = AddUpdateClient(ADD_CLIENT, {firstName, lastName, phone, avatarUrl}, {
+        onSuccess: () => {
+            props.refetch();
+        }
+    });
+
+    const onSubmit = (data: any) => {
+        const {firstName, lastName, phone, avatarUrl} = data;
+        setFirstName(firstName);
+        setLastName(lastName);
+        setPhone(String(phone));
+        setAvatarUrl(String(avatarUrl));
+        mutate();
+        setIsFormOpen(false);
+    }
 
     const handleClick = (event: React.MouseEvent) => {
         event.preventDefault();
@@ -75,7 +87,7 @@ const AddFormClients: React.FC<Props> = (props) => {
             </button>
             {isFormOpen && (
                 <div
-                     className="bg-gray-900 w-full h-full">
+                    className="bg-gray-900 w-full h-full">
                     <div
                         className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed bg-gray-900 inset-0 z-50 outline-none focus:outline-none">
                         <div ref={wrapperRef}
@@ -83,37 +95,52 @@ const AddFormClients: React.FC<Props> = (props) => {
                             <div
                                 className="border-0 rounded-lg p-10 bg-gray-800 relative w-full flex flex-col outline-none focus:outline-none">
                                 <div className="flex flex-col items-start justify-between p-5 rounded-t">
-                                    <h2 className="text-3xl pb-2 mb-3 text-center border-b border-green-400 w-full">Add Customer</h2>
+                                    <h2 className="text-3xl pb-2 mb-3 text-center border-b border-green-400 w-full">Add
+                                        Customer</h2>
                                     <form
                                         className="border-0 relative flex flex-col w-full outline-none focus:outline-none"
                                         onSubmit={handleSubmit(onSubmit)}
                                     >
                                         <label className="pt-5 pb-1">First Name</label>
-                                        <input className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none"
-                                               name="firstName"
-                                               ref={register({required: true, maxLength: 20})}/>
+                                        <input
+                                            className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none"
+                                            name="firstName"
+                                            ref={register({required: true, pattern: /^[A-Za-z]+$/i})}/>
+                                        <p className="text-red-700 pt-1">{errors.firstName && "First name is required. Please, enter letters only"}</p>
                                         <label className="pt-5 pb-1">Last Name</label>
-                                        <input className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none"
-                                               name="lastName"
-                                               ref={register({required: true, pattern: /^[A-Za-z]+$/i})}/>
+                                        <input
+                                            className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none"
+                                            name="lastName"
+                                            ref={register({required: true, pattern: /^[A-Za-z]+$/i})}/>
+                                        <p className="text-red-700">{errors.lastName && "Last name is required. Please, enter letters only"}</p>
                                         <label className="pt-5 pb-1">Phone</label>
-                                        <input className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none" name="phone" ref={register({
-                                            minLength: 10,
-                                            maxLength: 12,
-                                            pattern: /^(\+?\d{0,4})?\s?-?\s?(\(?\d{3}\)?)\s?-?\s?(\(?\d{3}\)?)\s?-?\s?(\(?\d{4}\)?)?$/
-                                        })}/>
+                                        <input
+                                            className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none"
+                                            name="phone"
+                                            ref={register({
+                                                minLength: 10,
+                                                maxLength: 12,
+                                                pattern: /^(\+?\d{0,4})?\s?-?\s?(\(?\d{3}\)?)\s?-?\s?(\(?\d{3}\)?)\s?-?\s?(\(?\d{4}\)?)?$/
+                                            })}/>
+                                        <p className="text-red-700">{errors.phone && "The phone's number has to start with 380.."}</p>
                                         <label className="pt-5 pb-1">AvatarUrl</label>
-                                        <input className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none" name="avatarUrl"
-                                               ref={register({pattern: /^[A-Za-z]+$/i})}/>
+                                        <input
+                                            className="pl-2 text-black border-0 rounded-md p-1 w-64 outline-none focus:outline-none"
+                                            type="url"
+                                            name="avatarUrl"
+                                            ref={register({
+                                                pattern: /^(http[s]?:\/\/){0,1}(www\.){0,1}[a-zA-Z0-9\.\-]+\.[a-zA-Z]{2,5}[\.]{0,1}/
+                                            })}/>
+                                        <p className="text-red-700">{errors.avatarUrl && "Please enter the URL of your avatar"}</p>
                                         <div className="flex flex-row justify-between">
                                             <button
-                                                className="mt-8 w-28 py-1 border-0 rounded-md  border border-green-400 outline-none focus:outline-none"
+                                                className="mt-8 w-28 py-1 border-0 rounded-md  border border-green-400 hover:bg-green-600 outline-none focus:outline-none"
                                                 type="submit"
                                             >
                                                 Add
                                             </button>
                                             <button
-                                                className="mt-8 w-28 py-1 border-0 rounded-md  border border-green-400 outline-none focus:outline-none"
+                                                className="mt-8 w-28 py-1 border-0 rounded-md  border border-green-400 hover:bg-green-600 outline-none focus:outline-none"
                                                 onClick={() => setIsFormOpen(false)}>
                                                 Cancel
                                             </button>

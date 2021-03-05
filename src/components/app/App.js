@@ -1,97 +1,86 @@
-import "./App.css";
 import React, {useState} from 'react';
-
 import "../../tailwind.css"
 import ClientsList from "../ClientsList"
 import AddFormClients from "../AddFormClients"
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "react-query";
 import EditFormClients from "../EditFormClients";
-import useClientsList from "../ClientsList/queries";
-import qgl from "graphql-tag"
+import {useClientsList, GET_CLIENT, AddUpdateClient, UPDATE_CLIENT} from "../ClientsList/queries"
 
-
-const client = new QueryClient();
 
 function App() {
 
-  const clientsData = [
-    {
-      id: "1",
-      firstName: 'Kate',
-      lastName: 'Smith',
-      phone: 380673600000,
-      avatarUrl: "http://ggfgyuegfyefg"
-    },
-    {
-      id: "2",
-      firstName: 'Max',
-      lastName: 'Hock',
-      phone: 380673600000,
-      avatarUrl: "http://ggfgyuegfyefg"
-    },
-  ]
+    const [editing, setEditing] = useState(false)
+    const initialFormState = {id: null, firstName: "", lastName: "", phone: "", avatarUrl: ""};
+    const [currentClient, setCurrentClient] = useState(initialFormState);
+    const [clients, setClients] = useState(null);
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [avatarUrl, setAvatarUrl] = useState("");
+    const {id} = currentClient;
 
-
-  const [clients, setClients] = useState(clientsData);
-  const [editing, setEditing] = useState(false)
-  const initialFormState = {id: null, firstName: "", lastName: "", phone: "", avatarUrl: ""};
-  const [currentClient, setCurrentClient] = useState(initialFormState);
-
-  const addClient = client => {
-    client.id = clients.length + 1
-    setClients([...clients, client])
-  }
-
-  const updateClient = (id, updatedClient) => {
-    setEditing(false);
-    setClients(clients.map(client => (client.id === id ? updatedClient : client)));
-  }
-
-  const editRow = client => {
-    setEditing(true)
-    setCurrentClient({
-      id: client.id,
-      firstName: client.firstName,
-      lastName: client.lastName,
-      phone: client.phone,
-      avatarUrl: client.avatarUrl
+    const {data, refetch} = useClientsList("getClients", GET_CLIENT, {
+        poolInterval: 500,
+        onSuccess: (data) => {
+            const {getClients} = data;
+            setClients(getClients)
+        }
     });
-  }
 
+    const {mutate} = AddUpdateClient(UPDATE_CLIENT, {id, firstName, lastName, phone, avatarUrl}, {
+        onSuccess: () => {
+            refetch();
+        }
+    });
 
-  return (
-      <QueryClientProvider client={client}>
+    const updateClient = (updatedClient) => {
+        setEditing(false);
+        const {firstName, lastName, phone, avatarUrl} = updatedClient;
+        setFirstName(firstName);
+        setLastName(lastName);
+        setPhone(String(phone));
+        setAvatarUrl(String(avatarUrl));
+        mutate(updatedClient);
+    }
+
+    const editRow = client => {
+        setEditing(true)
+        setCurrentClient({
+            id: client.id,
+            firstName: client.firstName,
+            lastName: client.lastName,
+            phone: client.phone,
+            avatarUrl: client.avatarUrl
+        });
+    }
+
+    return (
         <div className="md:container md:mx-auto relative">
-          <h1 className="text-4xl text-center p-10">Customer's list</h1>
-          <div className="bg-gray-800 p-5 border-0 rounded-lg">
-            <ClientsList
-                editRow={editRow}
-                clients={clients}
-            />
-            {editing ? (
-                <div>
-                  <EditFormClients
-                      editing={editing}
-                      setEditing={setEditing}
-                      currentClient={currentClient}
-                      updateClient={updateClient}
-                  />
-                </div>
-            ) : (
-                <div>
-                  <AddFormClients
-                      addClient={addClient}
-                      setEditing={setEditing}
-                  />
-                </div>
-            )}
-          </div>
+            <h1 className="text-4xl text-center p-10">Customer's list</h1>
+            <div className="bg-gray-800 p-5 border-0 rounded-lg">
+                <ClientsList
+                    editRow={editRow}
+                    clients={clients}
+                />
+                {editing ? (
+                    <div>
+                        <EditFormClients
+                            editing={editing}
+                            setEditing={setEditing}
+                            currentClient={currentClient}
+                            updateClient={updateClient}
+                        />
+                    </div>
+                ) : (
+                    <div>
+                        <AddFormClients
+                            setEditing={setEditing}
+                            refetch={refetch}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
-      </QueryClientProvider>
-  );
+    );
 }
 
 export default App;
