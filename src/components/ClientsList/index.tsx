@@ -26,6 +26,15 @@ const editSVG = <svg height="20px" viewBox="0 0 512 512.00004" width="20px"
         fill="url(#a)"/>
 </svg>
 
+const mockList = [
+    {
+    firstName: "Anna",
+    lastname: "Shevchenko",
+    phone: 38673633242,
+    avatarUrl: "https //www.ukr.net",
+}
+];
+
 const ClientsList: React.FC<Props> = (props) => {
 
     return (
